@@ -1,0 +1,13 @@
+
+# venv
+venv_*/*
+.venv/*
+
+# pycache
+__pycache__/*
+*/__pycache__/*
+
+# outputs / datafiles
+*.png
+*.parquet
+assets/*
