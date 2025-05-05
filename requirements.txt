@@ -1,0 +1,8 @@
+marimo
+polars
+altair
+numpy
+scipy
+ipython
+ipykernel
+nfl_data_py
