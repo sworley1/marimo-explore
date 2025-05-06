@@ -25,6 +25,7 @@ def _(mo):
 def _():
     import polars as pl
     import altair as alt
+    import pandas as pd
     #import nfl_data_py as nfl
     import marimo as mo
     from sklearn.decomposition import PCA
@@ -48,8 +49,9 @@ def _(mo, pl):
         1 + 1 
 
     else:
-        data_path_pbp = str( mo.notebook_location() /  "public" / '2024_pbp.csv'  )
-        d24 = pl.read_csv(data_path_pbp)
+        data_path_pbp = str( mo.notebook_location() /  "public" / '2024_pbp.parquet'  )
+        d24 = pd.read_csv(data_path_pbp)
+        d24 = pl.from_pandas( d24 )
 
     return d24, data_path_pbp, reloadBool, years
 
