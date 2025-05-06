@@ -28,7 +28,7 @@ jobs:
 
       - name: 📦 Install dependencies
         run: |
-          uv pip install marimo, polars, altair, scipy, numpy, nfl_data_py
+          uv pip install -r requirements.txt
 
       - name: �️ Export notebooks
         run: |
