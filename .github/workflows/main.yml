@@ -32,7 +32,7 @@ jobs:
 
       - name: �️ Export notebooks
         run: |
-          marimo export html-wasm notebooks/01-qb-explore.py -o ./output_dir --mode run
+          marimo export html-wasm notebooks/01-qb-explore.py -o ./output_dir --mode edit 
 
       - name: �📤 Upload artifact
         uses: actions/upload-pages-artifact@v3
