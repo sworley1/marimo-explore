@@ -17,15 +17,28 @@ on:
 
             steps:
                 # ... checkout and install dependencies
+                - uses: actions/checkout@v4
+
+                - name: Install uv
+                uses: astral-sh/setup-uv@v4
+
+                -name: Set up Python
+                uses: actions/setup-python@v5
+                with:
+                    python-version: 3.12
+                
+                -name: Install dependencies
+                run: |
+                    uv pip install marimo, nfl_data_py, polars, altair, scipy, numpy
 
                 - name: 📄 Export notebook
                 run: |
-                    marimo export html-wasm notebooks/01-qb-explore.py -o path/to/output --mode run
+                    marimo export html-wasm notebooks/01-qb-explore.py -o ./output_dir --mode run
 
                 - name: 📦 Upload Pages Artifact
                 uses: actions/upload-pages-artifact@v3
                 with:
-                    path: path/to/output
+                    path: ./output_dir
 
         deploy:
             needs: build
