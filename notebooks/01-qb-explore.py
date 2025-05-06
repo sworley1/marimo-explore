@@ -36,9 +36,9 @@ def _():
 
 
 @app.cell
-def _(nfl, pl):
+def _(mo, nfl, pl):
     years = [2024]
-    reloadBool = True
+    reloadBool = False
 
     if reloadBool == True:
         print("Reloading the 2024 pbp data")
@@ -46,9 +46,10 @@ def _(nfl, pl):
         d24 = pl.from_pandas(d24)
         #d24.write_parquet('./data/01-raw/2024_pbp.parquet')
     else:
-        d24 = pl.read_parquet('./data/01-raw/2024_pbp.parquet')
+        data_path_pbp = str( mo.notebook_location() /  "public" / '2024_pbp.parquet'  )
+        d24 = pl.read_parquet(data_path_pbp)
 
-    return d24, reloadBool, years
+    return d24, data_path_pbp, reloadBool, years
 
 
 @app.cell
@@ -177,16 +178,17 @@ def _(mo, pl, qb_epa_pp):
 
 
 @app.cell
-def _(nfl, pl, reloadBool, years):
+def _(mo, nfl, pl, reloadBool, years):
 
     if reloadBool== True:
         roster = nfl.import_seasonal_rosters(years )
         #roster.to_parquet('./data/01-raw/roster.parquet')
         roster = pl.from_pandas(roster)
     else:
-        roster = pl.read_parquet('./data/01-raw/roster.parquet')
+        data_path_roster = str( mo.notebook_location() /  "public" / 'roster.parquet'  )
+        roster = pl.read_parquet(data_path_roster)
 
-    return (roster,)
+    return data_path_roster, roster
 
 
 @app.cell
