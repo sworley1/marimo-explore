@@ -6,7 +6,18 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _(mo):
-    mo.md(r"""# Understanding the NFL QB Landscape""")
+    mo.md(
+        r"""
+        # Understanding the NFL QB Landscape
+        And playing with creating a [Marimo](https://marimo.io/) app 
+
+        Data from `nfl_data_py` - [link](https://github.com/nflverse/nfl_data_py)
+
+        To start, we'll load play by play data from `nfl_data_py` for the 2024 NFL season. I'm not super interested in including all players who through a pass in the 2024 season so we'll use the count of throwing plays to identify a cutoff of players to look at.   
+
+        Fortunately `marimo` makes this easy with the built in interactivity with altair to a dataframe.
+        """
+    )
     return
 
 
@@ -19,22 +30,21 @@ def _():
     from sklearn.decomposition import PCA
     import matplotlib.pyplot as plt
     plt.style.use('fivethirtyeight')
-    import helper
-    alt.themes.enable('black_marks')
     None
 
-    return PCA, alt, helper, mo, nfl, pl, plt
+    return PCA, alt, mo, nfl, pl, plt
 
 
 @app.cell
 def _(nfl, pl):
     years = [2024]
-    reloadBool = False
+    reloadBool = True
+
     if reloadBool == True:
         print("Reloading the 2024 pbp data")
         d24 = nfl.import_pbp_data(years, downcast=False, cache=False, alt_path=None)
         d24 = pl.from_pandas(d24)
-        d24.write_parquet('./data/01-raw/2024_pbp.parquet')
+        #d24.write_parquet('./data/01-raw/2024_pbp.parquet')
     else:
         d24 = pl.read_parquet('./data/01-raw/2024_pbp.parquet')
 
@@ -42,7 +52,62 @@ def _(nfl, pl):
 
 
 @app.cell
+def _(alt):
+    @alt.theme.register("black_marks", enable=True)
+    def black_marks() -> alt.theme.ThemeConfig:
+        markColor = '#2559A7'
+        backgroundColor='#FAFAFA'
+
+        categoryColors = [
+            markColor,
+            '#DB5461 ',
+            '#6CAE75',
+            '#9A049F',
+            '#F4B886',
+            '#D98324',
+            #'#4E0110'
+            '#1D6600',
+            '#A82431',
+        ]
+        cColors = ["a82431","f5a6e6","8d80c7","2559a7","ff934f","6cae75",'49848E','60B2E5']
+        cColors = ['#'+c for c in cColors]
+
+        return {
+            "config": {
+                "view": {"continuousWidth": 300, "continuousHeight": 300},
+                "mark": {"color": markColor, "fill": markColor },
+                "legend":{'orient':'bottom'},
+                'group':{'fill':backgroundColor},
+                'background':backgroundColor,
+                'title':{
+                    'anchor':'start',
+                    'fontSize':20,
+                    'font':"Roboto",
+                    'subtitleFontSize':13
+                },
+                "axis":{
+                    'titleFont':"Asap Condensed",
+                    'titleFontSize':14,
+                    'labelFontSize':12,
+                    'labelFont':'Asap Condensed'
+
+                },
+                'text':{
+                    'font':"Roboto",
+                    'fontSize':14
+                },
+                'range':{'category':cColors}
+
+            }
+        }
+    alt.theme.enable('black_marks')
+    None
+    return (black_marks,)
+
+
+@app.cell
 def _(d24, pl, roster):
+
     qb_epa_pp = (
         d24
         .filter(
@@ -72,7 +137,7 @@ def _(d24, pl, roster):
         .filter(pl.col("numb_plays")>30)
 
     )
-    qb_epa_pp
+    #qb_epa_pp
 
     return (qb_epa_pp,)
 
@@ -116,8 +181,8 @@ def _(nfl, pl, reloadBool, years):
 
     if reloadBool== True:
         roster = nfl.import_seasonal_rosters(years )
-        roster.to_parquet('./data/01-raw/roster.parquet')
-        roster = pl.read_parquet('./data/01-raw/roster.parquet')
+        #roster.to_parquet('./data/01-raw/roster.parquet')
+        roster = pl.from_pandas(roster)
     else:
         roster = pl.read_parquet('./data/01-raw/roster.parquet')
 
@@ -126,13 +191,13 @@ def _(nfl, pl, reloadBool, years):
 
 @app.cell
 def _(mo):
-    mo.md("""## EPA Exploration""")
-    return
+    mo.md(
+        """
+        Cool, now that we have a threshold, we can get on with analysis. We'll start with the most popular metric EPA.  
 
-
-@app.cell
-def _(roster):
-    roster
+        ## EPA Exploration
+        """
+    )
     return
 
 
@@ -154,9 +219,15 @@ def _(alt, numb_of_plays_thresh, qb_epa_pp2):
     leage_epa_rule = league_epa_hist_base.mark_rule(color='darkorange', size=5).encode(
         alt.X("mean(mean_epa)").title('')
     )
-    league_epa_hist = (leage_epa_hist_bars + leage_epa_rule).properties(
+
+    leage_epa_text = leage_epa_rule.mark_text(dx=20, color='darkorange', dy=-135).encode(
+        alt.Text('mean(mean_epa)', format='.2f'),
+        #y=alt.datum(10)
+    )
+    league_epa_hist = (leage_epa_hist_bars + leage_epa_rule + leage_epa_text ).properties(
         title={'text':'Distribution of mean QB EPA per play', 'subtitle':[
-            f'QBs with more than {numb_of_plays_thresh} plays'
+            f'QBs with more than {numb_of_plays_thresh} plays',
+            'Mean Avg EPA shown in dark orange'
         ]}
     )
 
@@ -164,18 +235,22 @@ def _(alt, numb_of_plays_thresh, qb_epa_pp2):
     return (
         leage_epa_hist_bars,
         leage_epa_rule,
+        leage_epa_text,
         league_epa_hist,
         league_epa_hist_base,
     )
 
 
 @app.cell
-def _(qb_epa_pp2):
+def _(mo, qb_epa_pp2):
     # What if we take the actual plays rather than the mean
     qb_epa_pp2_explode = (
         qb_epa_pp2
         .explode('all_epa_list')
         .rename({'all_epa_list':'epa'})
+    )
+    mo.md(
+        'Looking instead at all plays rather than averaging them first'
     )
     return (qb_epa_pp2_explode,)
 
@@ -232,6 +307,21 @@ def _(qb_epa_pp2_explode):
 def _(d24, min_epa, pl):
     min_epa_desc = d24.filter(pl.col("epa")==min_epa)['desc'][0]
     return (min_epa_desc,)
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+        Now that we have a baseline understanding of the distribution of EPA/play, let's look at individual QB performance.   
+        Looking across:     
+
+        * Mean EPA/play (affected by outliers)
+        * Median EPA/play (resistant to outliers)
+        * Standard deviation of EPA/play (how varied each QB is)
+        """
+    )
+    return
 
 
 @app.cell
@@ -314,7 +404,10 @@ def _(alt, pl, player_name_dropdown, qb_epa_pp2_explode):
     )
     josh_allen_chart = josh_allen_hist + josh_allen_mean + josh_allen_median
     josh_allen_chart.properties(
-        title=f'{player_name_dropdown.value} EPA distribution'
+        title={
+            'text':f'{player_name_dropdown.value} EPA distribution' 
+            ,'subtitle':['Mean EPA/play shown in orange','Median EPA/play shown in purple']
+              }
     )
     return (
         josh_allen_chart,
@@ -323,6 +416,12 @@ def _(alt, pl, player_name_dropdown, qb_epa_pp2_explode):
         josh_allen_mean,
         josh_allen_median,
     )
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""EPA gives a measure of if a play helped or hurt a respective team. Lets translate that into a measure of how often a QB contributed positively using `number of EPA plays / number of QB centric plays` where the number of QB centric plays is a pass play or QB run.""")
+    return
 
 
 @app.cell
@@ -425,7 +524,13 @@ def _(d24, numb_of_plays_thresh, pl):
 
 @app.cell
 def _(mo):
-    mo.md(r"""## PCA Analysis""")
+    mo.md(
+        r"""
+        ## PCA Grouping
+
+        Now that we have identified a few trends, let's look at grouping the QBs together to see how they relate and differ from each other. We'll use Principal Component Analysis to start.
+        """
+    )
     return
 
 
@@ -474,7 +579,7 @@ def _(mo, pca2, pl):
 
 
 @app.cell
-def _(numb_of_cols_to_look_at, p, pca2, pca_descr_df2, pca_result_df):
+def _():
     # ¯\_(ツ)_/¯
     import os
     import requests
@@ -509,6 +614,7 @@ def _(numb_of_cols_to_look_at, p, pca2, pca_descr_df2, pca_result_df):
     descrSummaryList2 = []
     columns = []
 
+    '''
     for p2 in pca2.get_feature_names_out():
         t2 = pca_descr_df2.sort(by=f'{p2}_abs',descending=True)
         roster2 = pca_result_df.sort(by=f'PC{p2[-1]}', descending=True)
@@ -522,8 +628,8 @@ def _(numb_of_cols_to_look_at, p, pca2, pca_descr_df2, pca_result_df):
 
         image_fps = []
         for i2, image1 in enumerate( top_qbs_image) :
-            image_fp = download_image( image1, top_qbs[i2] )
-            image_fps.append(image_fp)
+            #image_fp = download_image( image1, top_qbs[i2] )
+            #image_fps.append(image_fp)
 
         bottomg_images = []
         for i2, image1 in enumerate( bottom_qbs_image ):
@@ -540,30 +646,15 @@ def _(numb_of_cols_to_look_at, p, pca2, pca_descr_df2, pca_result_df):
         columns.append(col1)
         #columns.append(col2)
 
-
+    '''
+    None
     return (
-        bottom_qbs,
-        bottom_qbs_image,
-        bottomg_images,
-        col1,
         columns,
         descrSummaryList2,
         download_image,
-        fnames,
-        i2,
-        image1,
-        image_fp,
-        image_fps,
         numb_players_to_look,
         os,
-        p2,
-        raw_vals2,
         requests,
-        roster2,
-        t2,
-        top_qbs,
-        top_qbs_image,
-        vals2,
     )
 
 
@@ -625,7 +716,9 @@ def _(alt, for_pca, n_components, pca_out2, pl, roster, x_axis_ui, y_axis_ui):
         alt.Y(y_axis_ui.value),
         url='headshot_url',
         tooltip=['player_name']
-    ).interactive()
+    ).interactive().properties(
+        title='NLF QB Landscape shown with PCA'
+    )
     return pca_result_df, player_id_series
 
 
@@ -657,7 +750,7 @@ def _(mo):
     mo.md(
         r"""
         # Clustering
-        I want to use hierarchical clustering to group QBs who are most similar to each other. Ideally we can create a chart where the x axis is each QB and then the plot shows the dendrogram that it takes to build them all together
+        Last, we will use clustering to group our QBs together. We will use an agglomerative/hierarchical clustering to see how QBs relate and differ to each other. The hierarchical approach will allow us to see not only which QBs are most similar, but also how much they differ across groups using the dendrogram.
         """
     )
     return
@@ -790,8 +883,8 @@ def _(for_pca, h, pca_out2, plt, roster, use_pca_checkbox):
 
 
 @app.cell
-def _(columns, mo, pl):
-
+def _():
+    '''
     from great_tables import GT, style, google_font
 
     for_gt_table = pl.DataFrame(columns)
@@ -810,7 +903,9 @@ def _(columns, mo, pl):
             .save('test.png')
         )
         mo.image('test.png')
-    return GT, for_gt_table, for_gt_table2, google_font, style, x
+    '''
+    None
+    return
 
 
 @app.cell
