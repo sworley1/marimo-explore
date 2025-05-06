@@ -25,37 +25,38 @@ def _(mo):
 def _():
     import polars as pl
     import altair as alt
-    import nfl_data_py as nfl
+    #import nfl_data_py as nfl
     import marimo as mo
     from sklearn.decomposition import PCA
     import matplotlib.pyplot as plt
     plt.style.use('fivethirtyeight')
     None
 
-    return PCA, alt, mo, nfl, pl, plt
+    return PCA, alt, mo,  pl, plt
 
 
 @app.cell
-def _(mo, nfl, pl):
+def _(mo, pl):
     years = [2024]
     reloadBool = False
 
     if reloadBool == True:
-        print("Reloading the 2024 pbp data")
-        d24 = nfl.import_pbp_data(years, downcast=False, cache=False, alt_path=None)
-        d24 = pl.from_pandas(d24)
+        #print("Reloading the 2024 pbp data")
+        #d24 = nfl.import_pbp_data(years, downcast=False, cache=False, alt_path=None)
+        #d24 = pl.from_pandas(d24)
         #d24.write_parquet('./data/01-raw/2024_pbp.parquet')
+        1 + 1 
+
     else:
-        data_path_pbp = str( mo.notebook_location() /  "public" / '2024_pbp.parquet'  )
-        d24 = pl.read_parquet(data_path_pbp)
+        data_path_pbp = str( mo.notebook_location() /  "public" / '2024_pbp.csv'  )
+        d24 = pl.read_csv(data_path_pbp)
 
     return d24, data_path_pbp, reloadBool, years
 
 
 @app.cell
 def _(alt):
-    @alt.theme.register("black_marks", enable=True)
-    def black_marks() -> alt.theme.ThemeConfig:
+    def black_marks():
         markColor = '#2559A7'
         backgroundColor='#FAFAFA'
 
@@ -101,7 +102,12 @@ def _(alt):
 
             }
         }
-    alt.theme.enable('black_marks')
+    if alt.__version__ != '5.5.1':  
+        alt.themes.register('black_marks', black_marks)
+
+        # enable the newly registered theme
+        alt.themes.enable('black_marks')
+        
     None
     return (black_marks,)
 
@@ -159,7 +165,7 @@ def _(alt, mo, qb_epa_pp):
 def _(mo, playCountHistUi):
     mo.vstack([
         playCountHistUi,
-        mo.ui.table( playCountHistUi.value )
+        #mo.ui.table( playCountHistUi.value )
     ])
     return
 
@@ -178,15 +184,10 @@ def _(mo, pl, qb_epa_pp):
 
 
 @app.cell
-def _(mo, nfl, pl, reloadBool, years):
+def _(mo, pl):
 
-    if reloadBool== True:
-        roster = nfl.import_seasonal_rosters(years )
-        #roster.to_parquet('./data/01-raw/roster.parquet')
-        roster = pl.from_pandas(roster)
-    else:
-        data_path_roster = str( mo.notebook_location() /  "public" / 'roster.parquet'  )
-        roster = pl.read_parquet(data_path_roster)
+    data_path_roster = str( mo.notebook_location() /  "public" / 'roster.csv'  )
+    roster = pl.read_csv(data_path_roster)
 
     return data_path_roster, roster
 
@@ -204,10 +205,11 @@ def _(mo):
 
 
 @app.cell
-def _(nfl):
-    team_desc = nfl.import_team_desc()
+def _(mo, pl):
+    data_path_team_desc = str( mo.notebook_location() /  "public" / 'team_desc.csv'  )
+    team_desc = pl.read_csv(data_path_team_desc)
     #team_desc
-    return (team_desc,)
+    return data_path_team_desc, team_desc
 
 
 @app.cell
