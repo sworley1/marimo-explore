@@ -1,8 +1,8 @@
 name: Deploy to GitHub Pages
-    on:
-        push:
-            branches: ['main']
-        workflow_dispatch:
+on:
+    push:
+        branches: ['main']
+    workflow_dispatch:
 
     concurrency:
         group: 'pages'
@@ -20,7 +20,7 @@ name: Deploy to GitHub Pages
 
                 - name: 📄 Export notebook
                 run: |
-                    marimo export html-wasm notebook.py -o path/to/output --mode run
+                    marimo export html-wasm notebooks/01-qb-explore.py -o path/to/output --mode run
 
                 - name: 📦 Upload Pages Artifact
                 uses: actions/upload-pages-artifact@v3
